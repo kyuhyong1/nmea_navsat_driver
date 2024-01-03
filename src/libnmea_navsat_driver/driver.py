@@ -45,8 +45,8 @@ from libnmea_navsat_driver import parser
 class Ros2NMEADriver(Node):
     def __init__(self):
         super().__init__('nmea_navsat_driver')
-
-        self.fix_pub = self.create_publisher(NavSatFix, 'fix', 10)
+        topic = self.declare_parameter('topic', 'fix').value
+        self.fix_pub = self.create_publisher(NavSatFix, topic, 10)
         self.vel_pub = self.create_publisher(TwistStamped, 'vel', 10)
         self.heading_pub = self.create_publisher(QuaternionStamped, 'heading', 10)
         self.time_ref_pub = self.create_publisher(TimeReference, 'time_reference', 10)
