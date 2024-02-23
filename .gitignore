@@ -11,3 +11,5 @@ install
 .idea
 dist
 nmea_navsat_driver.egg-info/
+.vscode/c_cpp_properties.json
+.vscode/settings.json

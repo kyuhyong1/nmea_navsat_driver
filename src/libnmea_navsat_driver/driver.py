@@ -37,6 +37,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import NavSatFix, NavSatStatus, TimeReference
 from geometry_msgs.msg import TwistStamped, QuaternionStamped
+from uds_mmu_msgs.msg import GnssState
 from tf_transformations import quaternion_from_euler
 from libnmea_navsat_driver.checksum_utils import check_nmea_checksum
 from libnmea_navsat_driver import parser
@@ -46,7 +47,8 @@ class Ros2NMEADriver(Node):
     def __init__(self):
         super().__init__('nmea_navsat_driver')
         topic = self.declare_parameter('topic', 'fix').value
-        self.fix_pub = self.create_publisher(NavSatFix, topic, 10)
+        self.pub_gnss = self.create_publisher(GnssState, topic+'/gnss', 10)
+        self.fix_pub = self.create_publisher(NavSatFix, topic+'/navsat', 10)
         self.vel_pub = self.create_publisher(TwistStamped, 'vel', 10)
         self.heading_pub = self.create_publisher(QuaternionStamped, 'heading', 10)
         self.time_ref_pub = self.create_publisher(TimeReference, 'time_reference', 10)
@@ -151,6 +153,8 @@ class Ros2NMEADriver(Node):
 
             data = parsed_sentence['GGA']
             fix_type = data['fix_type']
+            num_satellites = data['num_satellites']
+            #self.get_logger().info(f"Satellites: {num_satellites}")
             if not (fix_type in self.gps_qualities):
                 fix_type = -1
             gps_qual = self.gps_qualities[fix_type]
@@ -191,6 +195,18 @@ class Ros2NMEADriver(Node):
             current_fix.position_covariance[8] = (2 * hdop * self.alt_std_dev) ** 2  # FIXME
 
             self.fix_pub.publish(current_fix)
+
+            gnss_state = GnssState()
+            gnss_state.stamp = current_time
+            gnss_state.fix_type = fix_type
+            gnss_state.satellites_used = num_satellites
+            gnss_state.geodetic.latitude = latitude
+            gnss_state.geodetic.longitude = longitude
+            gnss_state.geodetic.altitude_msl = altitude
+            gnss_state.hdop = hdop
+            gnss_state.position_covariance = current_fix.position_covariance
+            gnss_state.position_covariance_type = current_fix.position_covariance_type
+            self.pub_gnss.publish(gnss_state)
 
             if not math.isnan(data['utc_time']):
                 current_time_ref.time_ref = rclpy.time.Time(seconds=data['utc_time']).to_msg()
