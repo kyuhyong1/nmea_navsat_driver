@@ -204,8 +204,8 @@ class Ros2NMEADriver(Node):
             gnss_state.geodetic.longitude = longitude
             gnss_state.geodetic.altitude_msl = altitude
             gnss_state.hdop = hdop
-            gnss_state.position_covariance = current_fix.position_covariance
-            gnss_state.position_covariance_type = current_fix.position_covariance_type
+            #gnss_state.position_covariance = current_fix.position_covariance
+            #gnss_state.position_covariance_type = current_fix.position_covariance_type
             self.pub_gnss.publish(gnss_state)
 
             if not math.isnan(data['utc_time']):
